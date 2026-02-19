@@ -2,13 +2,14 @@
 
 # dependencies
 node_modules/
+.claude/*
 
 # Expo
 .expo/
 dist/
 web-build/
 expo-env.d.ts
-.claude/
+
 # Native
 .kotlin/
 *.orig.*
