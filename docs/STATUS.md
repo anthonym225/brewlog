@@ -1,6 +1,6 @@
 # BrewLog — Implementation Status
 
-> **Last updated:** 2026-02-18 (Phase 2 complete)
+> **Last updated:** 2026-02-18 (Phase 3 complete)
 > **Purpose:** Track task progress so any agent can pick up work efficiently. Always update this file when completing or starting a task.
 
 ---
@@ -29,25 +29,25 @@
 | T04 | Utility Functions | ✅ Done | 2 | UUID, rating computation, date/number formatting |
 | T05 | DB Schema & Initialization | ✅ Done | 2 | 4 tables with FKs, WAL mode, async init |
 | T06 | Navigation Shell | ✅ Done | 2 | Tab layout + all placeholder screens created |
-| T07 | Cafe CRUD | 🔲 Ready | 3 | Unblocked — T02 + T05 done |
-| T08 | Visit CRUD | 🔲 Ready | 3 | Unblocked — T02 + T05 done |
-| T09 | Drink CRUD | 🔲 Ready | 3 | Unblocked — T02 + T05 done |
-| T10 | Photo CRUD | 🔲 Ready | 3 | Unblocked — T02 + T05 done |
-| T11 | Rankings Queries | 🔲 Ready | 3 | Unblocked — T02 + T05 done |
-| T12 | RatingSlider Component | 🔲 Ready | 3 | Unblocked — T02 + T03 done |
-| T13 | DrinkRow Component | 🔲 Ready | 3 | Unblocked — T02 + T03 done |
-| T14 | VisitCard Component | 🔲 Ready | 3 | Unblocked — T02 done |
-| T15 | PhotoStrip Component | 🔲 Ready | 3 | Unblocked — T02 done |
-| T16 | EmptyState Component | 🔲 Ready | 3 | Unblocked — T02 done |
-| T17 | StatCard Component | 🔲 Ready | 3 | Unblocked — T02 done |
+| T07 | Cafe CRUD | ✅ Done | 3 | 7 functions: insert, getById, getByPlaceId, getAll, getWithStats, update, delete |
+| T08 | Visit CRUD | ✅ Done | 3 | 7 functions: insert, getById, getWithDetails, getAllWithDetails, getByCafeId, update, delete |
+| T09 | Drink CRUD | ✅ Done | 3 | 6 functions: insert, insertBatch, getByVisitId, update, delete, deleteByVisitId |
+| T10 | Photo CRUD | ✅ Done | 3 | 5 functions: insert, insertBatch, getByVisitId (sorted), delete, deleteByVisitId |
+| T11 | Rankings Queries | ✅ Done | 3 | 4 functions: getCafeRankings, getDrinkRankings, getOverallCafeRankings, getStats |
+| T12 | RatingSlider Component | ✅ Done | 3 | Tappable 1-10 circles, optional clearing, warm coffee palette |
+| T13 | DrinkRow Component | ✅ Done | 3 | Type picker modal, name input, rating slider, delete button |
+| T14 | VisitCard Component | ✅ Done | 3 | Hero photo/placeholder, cafe info, drinks summary, notes preview, rating badge |
+| T15 | PhotoStrip Component | ✅ Done | 3 | Horizontal scroll, editable/display modes, tap preview, long-press delete |
+| T16 | EmptyState Component | ✅ Done | 3 | Centered icon + title + message + optional CTA button |
+| T17 | StatCard Component | ✅ Done | 3 | Value + label + optional subtitle, designed for 2-column grid |
 | T18 | Zustand Store | ✅ Done | 2 | activeRankingTab + visitFormDraft state |
-| T19 | Add Visit Screen | ⏳ Blocked | 4 | Needs T06, T07, T12, T13, T15, T18 |
-| T20 | Home / Timeline Screen | ⏳ Blocked | 4 | Needs T06, T08, T14, T16 |
-| T21 | Visit Detail Screen | ⏳ Blocked | 4 | Needs T06, T08, T15 |
-| T22 | Cafe Page Screen | ⏳ Blocked | 4 | Needs T06, T07, T08, T11 |
-| T23 | Map Screen | ⏳ Blocked | 4 | Needs T06, T07 |
-| T24 | Rankings Screen | ⏳ Blocked | 4 | Needs T06, T11 |
-| T25 | Profile / Stats Screen | ⏳ Blocked | 4 | Needs T06, T11, T17 |
+| T19 | Add Visit Screen | 🔲 Ready | 4 | Unblocked — T06, T07, T12, T13, T15, T18 done |
+| T20 | Home / Timeline Screen | 🔲 Ready | 4 | Unblocked — T06, T08, T14, T16 done |
+| T21 | Visit Detail Screen | 🔲 Ready | 4 | Unblocked — T06, T08, T15 done |
+| T22 | Cafe Page Screen | 🔲 Ready | 4 | Unblocked — T06, T07, T08, T11 done |
+| T23 | Map Screen | 🔲 Ready | 4 | Unblocked — T06, T07 done |
+| T24 | Rankings Screen | 🔲 Ready | 4 | Unblocked — T06, T11 done |
+| T25 | Profile / Stats Screen | 🔲 Ready | 4 | Unblocked — T06, T11, T17 done |
 | T26 | Google Places Integration | ⏳ Blocked | 5 | Needs T19 |
 | T27 | Photo Capture & Storage | ⏳ Blocked | 5 | Needs T19 + T10 |
 | T28 | Polish & Integration Testing | ⏳ Blocked | 6 | Needs all screens |
@@ -58,18 +58,14 @@
 
 ## Currently Unblocked (ready to work on in parallel)
 
-**Phase 3 — all 11 tasks are unblocked:**
-- **T07** — Cafe CRUD → `src/db/cafes.ts`
-- **T08** — Visit CRUD → `src/db/visits.ts`
-- **T09** — Drink CRUD → `src/db/drinks.ts`
-- **T10** — Photo CRUD → `src/db/photos.ts`
-- **T11** — Rankings Queries → `src/db/rankings.ts`
-- **T12** — RatingSlider Component → `src/components/RatingSlider.tsx`
-- **T13** — DrinkRow Component → `src/components/DrinkRow.tsx`
-- **T14** — VisitCard Component → `src/components/VisitCard.tsx`
-- **T15** — PhotoStrip Component → `src/components/PhotoStrip.tsx`
-- **T16** — EmptyState Component → `src/components/EmptyState.tsx`
-- **T17** — StatCard Component → `src/components/StatCard.tsx`
+**Phase 4 — all 7 screen tasks are unblocked:**
+- **T19** — Add Visit Screen → `app/(tabs)/add.tsx`
+- **T20** — Home / Timeline Screen → `app/(tabs)/index.tsx`
+- **T21** — Visit Detail Screen → `app/visit/[id].tsx`
+- **T22** — Cafe Page Screen → `app/cafe/[id].tsx`
+- **T23** — Map Screen → `app/(tabs)/map.tsx`
+- **T24** — Rankings Screen → `app/(tabs)/rankings.tsx`
+- **T25** — Profile / Stats Screen → `app/(tabs)/profile.tsx`
 
 ---
 
@@ -124,6 +120,77 @@
   - Color palette: active `#8B5E3C`, inactive `#B0A090`, bg `#FFFAF5`
 - Placeholder screens created for all 5 tabs + `/visit/[id]` + `/cafe/[id]`
 
+### T07 — Cafe CRUD
+- `insertCafe()`: parameterized INSERT with auto timestamps
+- `getCafeById()`, `getCafeByGooglePlaceId()`: single-row lookups
+- `getAllCafes()`: ordered by name
+- `getCafesWithStats()`: LEFT JOIN with visits for visit_count, avg_overall_rating, last_visited_at
+- `updateCafe()`: dynamic SET clause, always bumps updated_at
+- `deleteCafe()`: CASCADE deletes visits/drinks/photos
+
+### T08 — Visit CRUD
+- `insertVisit()`: all 15 columns parameterized
+- `getVisitById()`: single visit lookup
+- `getVisitWithDetails()`: JOIN with cafe, batch-fetch drinks + photos, assemble composite
+- `getAllVisitsWithDetails()`: batch strategy (1 query for visits+cafe, 1 for drinks, 1 for photos)
+- `getVisitsByCafeId()`: same batch strategy filtered by cafe
+- `updateVisit()`: dynamic SET with whitelisted keys
+- `deleteVisit()`: CASCADE handles children
+
+### T09 — Drink CRUD
+- `insertDrink()` + `insertDrinks()` (batch): parameterized with auto timestamp
+- `getDrinksByVisitId()`: ordered by created_at ASC
+- `updateDrink()`: dynamic SET for name/type/rating/notes
+- `deleteDrink()` + `deleteDrinksByVisitId()`: for editing visits
+
+### T10 — Photo CRUD
+- `insertPhoto()` + `insertPhotos()` (batch): parameterized with auto timestamp
+- `getPhotosByVisitId()`: ordered by sort_order ASC
+- `deletePhoto()` + `deletePhotosByVisitId()`: for editing visits
+
+### T11 — Rankings & Stats
+- `getCafeRankings(dimension)`: AVG of a specific dimension, whitelist-validated
+- `getDrinkRankings(drinkType)`: individual drinks by type, parameterized
+- `getOverallCafeRankings()`: per-visit avg of all non-null dims, then per-cafe avg
+- `getStats()`: 7 queries for counts, cities, countries, fav drink, most visited, highest rated, month comparisons
+
+### T12 — RatingSlider Component
+- Tappable number row (1-10) with warm coffee colors
+- Fill effect up to selected value, exact value scaled slightly larger
+- Optional clearing: tap same value to unset, or explicit "Clear rating" link
+- Accessibility labels on each circle
+
+### T13 — DrinkRow Component
+- Type picker modal with FlatList of DRINK_TYPES, checkmark on selected
+- Custom name TextInput with placeholder
+- Inline RatingSlider for drink rating
+- Delete button (trash icon, red)
+- Card-style container with border
+
+### T14 — VisitCard Component
+- Hero photo (expo-image) or letter placeholder with gradient background
+- Cafe name + city + rating badge (brown pill)
+- Formatted date, drinks summary (compact "Name 8/10" format)
+- Notes preview (2-line truncation)
+- Card with shadow, rounded corners, full-width pressable
+
+### T15 — PhotoStrip Component
+- Horizontal ScrollView of 80x80 thumbnails (expo-image)
+- Editable mode: delete overlay (X icon), dashed "Add" button
+- Display mode: read-only, hides if empty
+- Tap to preview in full-screen modal
+- Long-press delete with Alert confirmation
+
+### T16 — EmptyState Component
+- Centered layout with configurable Ionicons icon (default: cafe-outline)
+- Title + message text in warm colors
+- Optional CTA button (brown, rounded)
+
+### T17 — StatCard Component
+- Large value (28pt, brown), label below, optional subtitle
+- Card with shadow, designed for flex grid
+- adjustsFontSizeToFit on value text
+
 ---
 
 ## Project Structure (current)
@@ -142,13 +209,24 @@ brewlog/
 │   ├── visit/[id].tsx            ✅ Placeholder — Visit Detail
 │   └── cafe/[id].tsx             ✅ Placeholder — Cafe Page
 ├── src/
-│   ├── components/               🔲 Empty — awaiting Phase 3
+│   ├── components/
+│   │   ├── RatingSlider.tsx      ✅ T12 — Tappable 1-10 rating input
+│   │   ├── DrinkRow.tsx          ✅ T13 — Drink entry with type picker + rating
+│   │   ├── VisitCard.tsx         ✅ T14 — Timeline feed card
+│   │   ├── PhotoStrip.tsx        ✅ T15 — Horizontal photo thumbnails
+│   │   ├── EmptyState.tsx        ✅ T16 — Centered empty state
+│   │   └── StatCard.tsx          ✅ T17 — Compact stat card for grid
 │   ├── constants/
 │   │   ├── drinkTypes.ts         ✅ T03 — 17 drink types
 │   │   └── experienceDimensions.ts ✅ T03 — 8 dimensions with categories
 │   ├── db/
 │   │   ├── schema.ts             ✅ T05 — CREATE TABLE statements
-│   │   └── database.ts           ✅ T05 — initDatabase + getDatabase
+│   │   ├── database.ts           ✅ T05 — initDatabase + getDatabase
+│   │   ├── cafes.ts              ✅ T07 — Cafe CRUD (7 functions)
+│   │   ├── visits.ts             ✅ T08 — Visit CRUD (7 functions)
+│   │   ├── drinks.ts             ✅ T09 — Drink CRUD (6 functions)
+│   │   ├── photos.ts             ✅ T10 — Photo CRUD (5 functions)
+│   │   └── rankings.ts           ✅ T11 — Rankings + stats (4 functions)
 │   ├── stores/
 │   │   └── useAppStore.ts        ✅ T18 — Zustand UI state store
 │   ├── types/
