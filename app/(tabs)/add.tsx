@@ -20,6 +20,8 @@ import { insertCafe, getAllCafes, getCafeByGooglePlaceId } from '@/db/cafes';
 import { CafeSearchBar } from '@/components/CafeSearchBar';
 import { insertVisit } from '@/db/visits';
 import { insertDrinks } from '@/db/drinks';
+import { insertPhotos } from '@/db/photos';
+import { pickPhotos, savePhotoToStorage, deletePhotoFile } from '@/utils/photos';
 import { useAppStore } from '@/stores/useAppStore';
 import { DrinkRow } from '@/components/DrinkRow';
 import { RatingSlider } from '@/components/RatingSlider';
@@ -114,7 +116,8 @@ export default function AddVisitScreen() {
       if (visitFormDraft.experience_ratings) {
         setExperienceRatings(visitFormDraft.experience_ratings);
       }
-      // Do not restore photos — picker URIs are session-scoped and may be invalid
+      // Do not restore photos — picker URIs are session-scoped and may be
+      // invalid after the app has been backgrounded and the temp cache evicted.
       if (visitFormDraft.notes) setNotes(visitFormDraft.notes);
     }
   }, [visitFormDraft]);
@@ -250,6 +253,26 @@ export default function AddVisitScreen() {
       return;
     }
     setDrinks((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleAddPhotos = async () => {
+    try {
+      const uris = await pickPhotos();
+      if (uris.length > 0) {
+        setPhotos((prev) => [...prev, ...uris]);
+      }
+    } catch (err) {
+      const code = (err as Error & { code?: string }).code;
+      if (code === 'PERMISSION_DENIED') {
+        Alert.alert(
+          'Photos Access Denied',
+          'BrewLog needs access to your photo library. Please enable it in Settings.',
+          [{ text: 'OK' }]
+        );
+      } else {
+        Alert.alert('Error', 'Failed to pick photos. Please try again.');
+      }
+    }
   };
 
   const handleExperienceRatingChange = (
@@ -390,6 +413,33 @@ export default function AddVisitScreen() {
           notes: d.notes,
         }))
       );
+
+      // Save photos to device storage and insert records.
+      // Track saved paths so we can clean up on failure (avoid orphaned files).
+      const savedFilePaths: string[] = [];
+      if (photos.length > 0) {
+        try {
+          const savedPhotos = await Promise.all(
+            photos.map(async (uri, index) => {
+              const filePath = await savePhotoToStorage(uri);
+              savedFilePaths.push(filePath);
+              return {
+                id: generateUUID(),
+                visit_id: visitId,
+                file_path: filePath,
+                sort_order: index,
+              };
+            })
+          );
+          await insertPhotos(savedPhotos);
+        } catch (photoErr) {
+          // Clean up any files that were already written to disk
+          for (const fp of savedFilePaths) {
+            deletePhotoFile(fp);
+          }
+          throw photoErr;
+        }
+      }
 
       // Clear draft and navigate
       clearVisitFormDraft();
@@ -634,7 +684,7 @@ export default function AddVisitScreen() {
             <PhotoStrip
               photos={photos}
               editable
-              onAdd={() => console.log('Add photos tapped')}
+              onAdd={handleAddPhotos}
               onDelete={(index) =>
                 setPhotos((prev) => prev.filter((_, i) => i !== index))
               }
