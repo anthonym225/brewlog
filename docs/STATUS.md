@@ -48,9 +48,9 @@
 | T23 | Map Screen | ✅ Done | 4 | Merged PR #6 |
 | T24 | Rankings Screen | ✅ Done | 4 | Merged PR #7 |
 | T25 | Profile / Stats Screen | ✅ Done | 4 | Merged PR #8 |
-| T26 | Google Places Integration | 🚧 In Progress | 5 | PR #9 open — feat/t26-google-places |
-| T27 | Photo Capture & Storage | 🚧 In Progress | 5 | PR #10 open — feat/t27-photo-storage |
-| T28 | Polish & Integration Testing | ⏳ Blocked | 6 | Needs T26 + T27 merged |
+| T26 | Google Places Integration | ✅ Done | 5 | Merged PR #9 — mock mode + dotenv loading |
+| T27 | Photo Capture & Storage | ✅ Done | 5 | Merged PR #10 — expo-file-system v19 |
+| T28 | Polish & Integration Testing | ✅ Done | 6 | Edit Visit screen + polish fixes |
 
 **Status legend:** ✅ Done · 🚧 In Progress · 🔲 Ready (unblocked) · ⏳ Blocked
 
