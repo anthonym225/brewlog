@@ -83,7 +83,7 @@ export default function VisitDetailScreen() {
       headerRight: () => (
         <View style={styles.headerButtons}>
           <TouchableOpacity
-            onPress={() => console.log('Edit visit', id)}
+            onPress={() => router.push(`/visit/edit/${id}`)}
             style={styles.headerButton}
           >
             <Ionicons name="pencil-outline" size={22} color="#8B5E3C" />
