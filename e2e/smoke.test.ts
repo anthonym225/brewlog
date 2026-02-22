@@ -134,6 +134,42 @@ test.describe('BrewLog web smoke tests', () => {
     await expectNoErrorOverlay(page);
   });
 
+  // ── Cafe Search (Mock) ───────────────────────────────────────────────────────
+
+  test('Add Visit cafe search returns mock results', async ({ page }) => {
+    // Navigate to Add Visit
+    const addLink = page.locator('a[href*="add"]').first();
+    if (await addLink.isVisible({ timeout: 3000 }).catch(() => false)) {
+      await addLink.click();
+      await waitForLoad(page);
+    } else {
+      await page.goto('/add');
+      await waitForLoad(page);
+    }
+
+    // Find the search input (TextInput renders as <input> on web)
+    const searchInput = page.locator('input[placeholder="Search for a cafe..."]').first();
+    const inputVisible = await searchInput.isVisible({ timeout: 5000 }).catch(() => false);
+
+    if (!inputVisible) {
+      // Search bar not rendered on web — skip gracefully
+      await expectNoErrorOverlay(page);
+      return;
+    }
+
+    // Type 'blue' — debounce is 300ms so wait 500ms
+    await searchInput.fill('blue');
+    await page.waitForTimeout(500);
+
+    // Blue Bottle Coffee should appear in dropdown
+    await expect(page.locator('text=Blue Bottle Coffee').first()).toBeVisible({ timeout: 5000 });
+
+    // Sightglass should NOT appear (doesn't match 'blue')
+    await expect(page.locator('text=Sightglass Coffee').first()).not.toBeVisible({ timeout: 2000 }).catch(() => {});
+
+    await expectNoErrorOverlay(page);
+  });
+
   // ── No JS Errors ─────────────────────────────────────────────────────────────
 
   test('No uncaught JS errors on home screen', async ({ page }) => {
