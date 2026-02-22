@@ -17,6 +17,7 @@ import {
 } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { getVisitWithDetails, deleteVisit } from '@/db/visits';
+import { deletePhotoFile } from '@/utils/photos';
 import { PhotoStrip } from '@/components/PhotoStrip';
 import { EXPERIENCE_DIMENSIONS } from '@/constants/experienceDimensions';
 import { formatDate, formatRating } from '@/utils/formatting';
@@ -58,6 +59,12 @@ export default function VisitDetailScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
+              // Delete photo files from disk before removing DB row
+              if (visit?.photos && visit.photos.length > 0) {
+                await Promise.allSettled(
+                  visit.photos.map((p) => deletePhotoFile(p.file_path))
+                );
+              }
               await deleteVisit(id);
               router.back();
             } catch (error) {

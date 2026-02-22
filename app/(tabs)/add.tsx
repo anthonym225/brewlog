@@ -19,6 +19,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { insertCafe, getAllCafes } from '@/db/cafes';
 import { insertVisit } from '@/db/visits';
 import { insertDrinks } from '@/db/drinks';
+import { insertPhotos } from '@/db/photos';
+import { pickPhotos, savePhotoToStorage } from '@/utils/photos';
 import { useAppStore } from '@/stores/useAppStore';
 import { DrinkRow } from '@/components/DrinkRow';
 import { RatingSlider } from '@/components/RatingSlider';
@@ -206,6 +208,17 @@ export default function AddVisitScreen() {
     setDrinks((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const handleAddPhotos = async () => {
+    try {
+      const uris = await pickPhotos();
+      if (uris.length > 0) {
+        setPhotos((prev) => [...prev, ...uris]);
+      }
+    } catch {
+      Alert.alert('Error', 'Failed to pick photos. Please try again.');
+    }
+  };
+
   const handleExperienceRatingChange = (
     key: ExperienceDimensionKey,
     value: number | null
@@ -328,6 +341,22 @@ export default function AddVisitScreen() {
           notes: d.notes,
         }))
       );
+
+      // Save photos to device storage and insert records
+      if (photos.length > 0) {
+        const savedPhotos = await Promise.all(
+          photos.map(async (uri, index) => {
+            const filePath = await savePhotoToStorage(uri);
+            return {
+              id: generateUUID(),
+              visit_id: visitId,
+              file_path: filePath,
+              sort_order: index,
+            };
+          })
+        );
+        await insertPhotos(savedPhotos);
+      }
 
       // Clear draft and navigate
       clearVisitFormDraft();
@@ -560,7 +589,7 @@ export default function AddVisitScreen() {
             <PhotoStrip
               photos={photos}
               editable
-              onAdd={() => console.log('Add photos tapped')}
+              onAdd={handleAddPhotos}
               onDelete={(index) =>
                 setPhotos((prev) => prev.filter((_, i) => i !== index))
               }
