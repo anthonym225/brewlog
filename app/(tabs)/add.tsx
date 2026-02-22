@@ -14,9 +14,10 @@ import {
   FlatList,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router, useFocusEffect } from 'expo-router';
+import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { insertCafe, getAllCafes } from '@/db/cafes';
+import { insertCafe, getAllCafes, getCafeByGooglePlaceId } from '@/db/cafes';
+import { CafeSearchBar } from '@/components/CafeSearchBar';
 import { insertVisit } from '@/db/visits';
 import { insertDrinks } from '@/db/drinks';
 import { useAppStore } from '@/stores/useAppStore';
@@ -80,6 +81,8 @@ export default function AddVisitScreen() {
   const [ratingsExpanded, setRatingsExpanded] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showManualEntry, setShowManualEntry] = useState(false);
+  const [googleCafeSelection, setGoogleCafeSelection] = useState<Omit<Cafe, 'id' | 'created_at' | 'updated_at'> | null>(null);
 
   const draftSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hasRestoredDraft = useRef(false);
@@ -91,11 +94,18 @@ export default function AddVisitScreen() {
 
     if (visitFormDraft) {
       if (visitFormDraft.cafe) {
-        setSelectedCafe(visitFormDraft.cafe);
-        setCafeName(visitFormDraft.cafe.name);
-        setCafeAddress(visitFormDraft.cafe.address);
-        setCafeCity(visitFormDraft.cafe.city);
-        setCafeCountry(visitFormDraft.cafe.country);
+        const { id, created_at, updated_at, ...cafeRest } = visitFormDraft.cafe;
+        if (id === '__google_places__') {
+          // Restore as Google Places selection (not yet in DB)
+          setGoogleCafeSelection(cafeRest);
+        } else {
+          // Restore as existing DB cafe
+          setSelectedCafe(visitFormDraft.cafe);
+        }
+        setCafeName(cafeRest.name);
+        setCafeAddress(cafeRest.address);
+        setCafeCity(cafeRest.city);
+        setCafeCountry(cafeRest.country);
       }
       if (visitFormDraft.visited_at) setVisitedAt(visitFormDraft.visited_at);
       if (visitFormDraft.drinks && visitFormDraft.drinks.length > 0) {
@@ -104,7 +114,7 @@ export default function AddVisitScreen() {
       if (visitFormDraft.experience_ratings) {
         setExperienceRatings(visitFormDraft.experience_ratings);
       }
-      if (visitFormDraft.photos) setPhotos(visitFormDraft.photos);
+      // Do not restore photos — picker URIs are session-scoped and may be invalid
       if (visitFormDraft.notes) setNotes(visitFormDraft.notes);
     }
   }, [visitFormDraft]);
@@ -115,8 +125,20 @@ export default function AddVisitScreen() {
       clearTimeout(draftSaveTimer.current);
     }
     draftSaveTimer.current = setTimeout(() => {
+      // Represent googleCafeSelection as a sentinel Cafe (id='__google_places__')
+      // so it survives backgrounding without changing the VisitFormData type.
+      const draftCafe: typeof selectedCafe =
+        selectedCafe ??
+        (googleCafeSelection
+          ? {
+              id: '__google_places__',
+              created_at: '',
+              updated_at: '',
+              ...googleCafeSelection,
+            }
+          : null);
       setVisitFormDraft({
-        cafe: selectedCafe,
+        cafe: draftCafe,
         visited_at: visitedAt,
         drinks,
         experience_ratings: experienceRatings,
@@ -136,6 +158,7 @@ export default function AddVisitScreen() {
     cafeCity,
     cafeCountry,
     selectedCafe,
+    googleCafeSelection,
     visitedAt,
     drinks,
     experienceRatings,
@@ -144,9 +167,9 @@ export default function AddVisitScreen() {
     setVisitFormDraft,
   ]);
 
-  // Search for matching cafes when name changes
+  // Search for matching cafes when name changes (manual entry mode only)
   useEffect(() => {
-    if (cafeName.length < 2 || selectedCafe) {
+    if (!showManualEntry || cafeName.length < 2 || selectedCafe) {
       setMatchingCafes([]);
       return;
     }
@@ -168,7 +191,7 @@ export default function AddVisitScreen() {
     return () => {
       cancelled = true;
     };
-  }, [cafeName, selectedCafe]);
+  }, [cafeName, selectedCafe, showManualEntry]);
 
   const handleSelectExistingCafe = (cafe: Cafe) => {
     setSelectedCafe(cafe);
@@ -181,10 +204,33 @@ export default function AddVisitScreen() {
 
   const handleClearSelectedCafe = () => {
     setSelectedCafe(null);
+    setGoogleCafeSelection(null);
     setCafeName('');
     setCafeAddress('');
     setCafeCity('');
     setCafeCountry('');
+    setShowManualEntry(false);
+  };
+
+  const handleCafeSelectFromGoogle = async (
+    cafeData: Omit<Cafe, 'id' | 'created_at' | 'updated_at'>
+  ) => {
+    if (cafeData.google_place_id) {
+      try {
+        const existing = await getCafeByGooglePlaceId(cafeData.google_place_id);
+        if (existing) {
+          handleSelectExistingCafe(existing);
+          return;
+        }
+      } catch {
+        // fall through to set as new google selection
+      }
+    }
+    setGoogleCafeSelection(cafeData);
+    setCafeName(cafeData.name);
+    setCafeAddress(cafeData.address);
+    setCafeCity(cafeData.city);
+    setCafeCountry(cafeData.country);
   };
 
   const handleAddDrink = () => {
@@ -245,6 +291,22 @@ export default function AddVisitScreen() {
       let cafeId: string;
       if (selectedCafe) {
         cafeId = selectedCafe.id;
+      } else if (googleCafeSelection) {
+        // Deduplicate by google_place_id before inserting
+        if (googleCafeSelection.google_place_id) {
+          const existing = await getCafeByGooglePlaceId(
+            googleCafeSelection.google_place_id
+          );
+          if (existing) {
+            cafeId = existing.id;
+          } else {
+            cafeId = generateUUID();
+            await insertCafe({ id: cafeId, ...googleCafeSelection });
+          }
+        } else {
+          cafeId = generateUUID();
+          await insertCafe({ id: cafeId, ...googleCafeSelection });
+        }
       } else {
         cafeId = generateUUID();
         await insertCafe({
@@ -347,6 +409,8 @@ export default function AddVisitScreen() {
     setCafeCity('');
     setCafeCountry('');
     setSelectedCafe(null);
+    setGoogleCafeSelection(null);
+    setShowManualEntry(false);
     setVisitedAt(new Date().toISOString().split('T')[0]);
     setDrinks([
       { id: generateUUID(), name: '', type: '', rating: 0, notes: '' },
@@ -387,15 +451,16 @@ export default function AddVisitScreen() {
           {/* Cafe Selection */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Cafe</Text>
-            {selectedCafe ? (
+            {selectedCafe || googleCafeSelection ? (
               <View style={styles.selectedCafeCard}>
                 <View style={styles.selectedCafeInfo}>
                   <Text style={styles.selectedCafeName}>
-                    {selectedCafe.name}
+                    {selectedCafe ? selectedCafe.name : googleCafeSelection!.name}
                   </Text>
                   <Text style={styles.selectedCafeAddress}>
-                    {selectedCafe.address}
-                    {selectedCafe.city ? `, ${selectedCafe.city}` : ''}
+                    {selectedCafe
+                      ? `${selectedCafe.address}${selectedCafe.city ? `, ${selectedCafe.city}` : ''}`
+                      : `${googleCafeSelection!.address}${googleCafeSelection!.city ? `, ${googleCafeSelection!.city}` : ''}`}
                   </Text>
                 </View>
                 <TouchableOpacity
@@ -405,7 +470,7 @@ export default function AddVisitScreen() {
                   <Ionicons name="close-circle" size={24} color="#B0A090" />
                 </TouchableOpacity>
               </View>
-            ) : (
+            ) : showManualEntry ? (
               <>
                 <TextInput
                   style={styles.input}
@@ -423,15 +488,9 @@ export default function AddVisitScreen() {
                         onPress={() => handleSelectExistingCafe(c)}
                         activeOpacity={0.7}
                       >
-                        <Ionicons
-                          name="cafe"
-                          size={16}
-                          color="#8B5E3C"
-                        />
+                        <Ionicons name="cafe" size={16} color="#8B5E3C" />
                         <View style={styles.suggestionText}>
-                          <Text style={styles.suggestionName}>
-                            {c.name}
-                          </Text>
+                          <Text style={styles.suggestionName}>{c.name}</Text>
                           <Text style={styles.suggestionAddress}>
                             {c.address}
                             {c.city ? `, ${c.city}` : ''}
@@ -464,7 +523,22 @@ export default function AddVisitScreen() {
                     placeholderTextColor="#B0A090"
                   />
                 </View>
+                <TouchableOpacity
+                  onPress={() => setShowManualEntry(false)}
+                  style={styles.backToSearchButton}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="search-outline" size={15} color="#8B5E3C" />
+                  <Text style={styles.backToSearchText}>Search instead</Text>
+                </TouchableOpacity>
               </>
+            ) : (
+              <CafeSearchBar
+                onSelect={(cafeData) => {
+                  handleCafeSelectFromGoogle(cafeData).catch(() => {});
+                }}
+                onManualEntry={() => setShowManualEntry(true)}
+              />
             )}
           </View>
 
@@ -930,6 +1004,17 @@ const styles = StyleSheet.create({
     backgroundColor: '#F5EDE3',
     borderRadius: 10,
     padding: 12,
+  },
+  backToSearchButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingTop: 8,
+  },
+  backToSearchText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#8B5E3C',
   },
   selectedCafeInfo: {
     flex: 1,
