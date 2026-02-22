@@ -187,8 +187,8 @@ export default function AddVisitScreen() {
         if (!cancelled) {
           setMatchingCafes(matches.slice(0, 5));
         }
-      } catch {
-        // ignore
+      } catch (err) {
+        console.error('[AddVisit] cafe search error:', err);
       }
     })();
     return () => {
