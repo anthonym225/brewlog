@@ -41,16 +41,16 @@
 | T16 | EmptyState Component | ✅ Done | 3 | Centered icon + title + message + optional CTA button |
 | T17 | StatCard Component | ✅ Done | 3 | Value + label + optional subtitle, designed for 2-column grid |
 | T18 | Zustand Store | ✅ Done | 2 | activeRankingTab + visitFormDraft state |
-| T19 | Add Visit Screen | 🔲 Ready | 4 | Unblocked — T06, T07, T12, T13, T15, T18 done |
-| T20 | Home / Timeline Screen | 🔲 Ready | 4 | Unblocked — T06, T08, T14, T16 done |
-| T21 | Visit Detail Screen | 🔲 Ready | 4 | Unblocked — T06, T08, T15 done |
-| T22 | Cafe Page Screen | 🔲 Ready | 4 | Unblocked — T06, T07, T08, T11 done |
-| T23 | Map Screen | 🔲 Ready | 4 | Unblocked — T06, T07 done |
-| T24 | Rankings Screen | 🔲 Ready | 4 | Unblocked — T06, T11 done |
-| T25 | Profile / Stats Screen | 🔲 Ready | 4 | Unblocked — T06, T11, T17 done |
-| T26 | Google Places Integration | ⏳ Blocked | 5 | Needs T19 |
-| T27 | Photo Capture & Storage | ⏳ Blocked | 5 | Needs T19 + T10 |
-| T28 | Polish & Integration Testing | ⏳ Blocked | 6 | Needs all screens |
+| T19 | Add Visit Screen | ✅ Done | 4 | Merged PR #2 |
+| T20 | Home / Timeline Screen | ✅ Done | 4 | Merged PR #3 |
+| T21 | Visit Detail Screen | ✅ Done | 4 | Merged PR #4 |
+| T22 | Cafe Page Screen | ✅ Done | 4 | Merged PR #5 |
+| T23 | Map Screen | ✅ Done | 4 | Merged PR #6 |
+| T24 | Rankings Screen | ✅ Done | 4 | Merged PR #7 |
+| T25 | Profile / Stats Screen | ✅ Done | 4 | Merged PR #8 |
+| T26 | Google Places Integration | 🚧 In Progress | 5 | PR #9 open — feat/t26-google-places |
+| T27 | Photo Capture & Storage | 🚧 In Progress | 5 | PR #10 open — feat/t27-photo-storage |
+| T28 | Polish & Integration Testing | ⏳ Blocked | 6 | Needs T26 + T27 merged |
 
 **Status legend:** ✅ Done · 🚧 In Progress · 🔲 Ready (unblocked) · ⏳ Blocked
 
