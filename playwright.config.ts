@@ -17,7 +17,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'CI=1 npx expo start --web --port 8081',
+    command: 'GOOGLE_PLACES_API_KEY=mock CI=1 npx expo start --web --port 8081',
     url: 'http://localhost:8081',
     reuseExistingServer: true,
     timeout: 120000,
