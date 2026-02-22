@@ -75,7 +75,7 @@ export default function VisitDetailScreen() {
         },
       ]
     );
-  }, [id]);
+  }, [id, visit]);
 
   useLayoutEffect(() => {
     navigation.setOptions({

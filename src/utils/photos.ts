@@ -2,20 +2,25 @@
 import * as ImagePicker from 'expo-image-picker';
 import { File, Directory, Paths } from 'expo-file-system';
 import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
+import { generateUUID } from '@/utils/uuid';
 
 /**
  * Open the image library picker and return the selected photo URIs.
- * Returns an empty array if the user cancels or denies permission.
+ * Returns an empty array if the user cancels.
+ * Throws an error with code 'PERMISSION_DENIED' if library access is denied.
  */
 export async function pickPhotos(): Promise<string[]> {
   const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
   if (status !== 'granted') {
-    return [];
+    const err = new Error('Photo library permission denied');
+    (err as Error & { code: string }).code = 'PERMISSION_DENIED';
+    throw err;
   }
 
   const result = await ImagePicker.launchImageLibraryAsync({
     mediaTypes: ['images'],
     allowsMultipleSelection: true,
+    selectionLimit: 10,
     quality: 1,
   });
 
@@ -31,15 +36,12 @@ export async function pickPhotos(): Promise<string[]> {
  * resize it to max 1200px wide, and return the new file path.
  */
 export async function savePhotoToStorage(uri: string): Promise<string> {
-  // Ensure the photos directory exists
+  // Ensure the photos directory exists (idempotent — safe to call every time)
   const photosDir = new Directory(Paths.document, 'photos');
-  if (!photosDir.exists) {
-    photosDir.create();
-  }
+  photosDir.create({ idempotent: true });
 
-  // Generate a unique filename
-  const suffix = Math.floor(Math.random() * 1e9).toString(36);
-  const filename = `photo_${Date.now()}_${suffix}.jpg`;
+  const filename = `photo_${generateUUID()}.jpg`;
+  const destFile = new File(photosDir, filename);
 
   // Resize and compress via ImageManipulator
   const manipulated = await manipulateAsync(
@@ -48,10 +50,19 @@ export async function savePhotoToStorage(uri: string): Promise<string> {
     { compress: 0.85, format: SaveFormat.JPEG }
   );
 
-  // Move the manipulated file to the permanent photos directory
-  const destFile = new File(photosDir, filename);
+  // Move the manipulated file to its permanent location
   const tempFile = new File(manipulated.uri);
-  tempFile.move(destFile);
+  try {
+    tempFile.move(destFile);
+  } catch (moveErr) {
+    // Clean up the temp file to avoid leaking it in the cache
+    try {
+      tempFile.delete();
+    } catch {
+      // best-effort
+    }
+    throw moveErr;
+  }
 
   return destFile.uri;
 }
@@ -59,7 +70,7 @@ export async function savePhotoToStorage(uri: string): Promise<string> {
 /**
  * Delete a photo file from disk. No-op if the file doesn't exist.
  */
-export async function deletePhotoFile(filePath: string): Promise<void> {
+export function deletePhotoFile(filePath: string): void {
   const file = new File(filePath);
   if (file.exists) {
     file.delete();
