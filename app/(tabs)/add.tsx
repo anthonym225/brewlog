@@ -94,11 +94,18 @@ export default function AddVisitScreen() {
 
     if (visitFormDraft) {
       if (visitFormDraft.cafe) {
-        setSelectedCafe(visitFormDraft.cafe);
-        setCafeName(visitFormDraft.cafe.name);
-        setCafeAddress(visitFormDraft.cafe.address);
-        setCafeCity(visitFormDraft.cafe.city);
-        setCafeCountry(visitFormDraft.cafe.country);
+        const { id, created_at, updated_at, ...cafeRest } = visitFormDraft.cafe;
+        if (id === '__google_places__') {
+          // Restore as Google Places selection (not yet in DB)
+          setGoogleCafeSelection(cafeRest);
+        } else {
+          // Restore as existing DB cafe
+          setSelectedCafe(visitFormDraft.cafe);
+        }
+        setCafeName(cafeRest.name);
+        setCafeAddress(cafeRest.address);
+        setCafeCity(cafeRest.city);
+        setCafeCountry(cafeRest.country);
       }
       if (visitFormDraft.visited_at) setVisitedAt(visitFormDraft.visited_at);
       if (visitFormDraft.drinks && visitFormDraft.drinks.length > 0) {
@@ -107,7 +114,7 @@ export default function AddVisitScreen() {
       if (visitFormDraft.experience_ratings) {
         setExperienceRatings(visitFormDraft.experience_ratings);
       }
-      if (visitFormDraft.photos) setPhotos(visitFormDraft.photos);
+      // Do not restore photos — picker URIs are session-scoped and may be invalid
       if (visitFormDraft.notes) setNotes(visitFormDraft.notes);
     }
   }, [visitFormDraft]);
@@ -118,8 +125,20 @@ export default function AddVisitScreen() {
       clearTimeout(draftSaveTimer.current);
     }
     draftSaveTimer.current = setTimeout(() => {
+      // Represent googleCafeSelection as a sentinel Cafe (id='__google_places__')
+      // so it survives backgrounding without changing the VisitFormData type.
+      const draftCafe: typeof selectedCafe =
+        selectedCafe ??
+        (googleCafeSelection
+          ? {
+              id: '__google_places__',
+              created_at: '',
+              updated_at: '',
+              ...googleCafeSelection,
+            }
+          : null);
       setVisitFormDraft({
-        cafe: selectedCafe,
+        cafe: draftCafe,
         visited_at: visitedAt,
         drinks,
         experience_ratings: experienceRatings,
@@ -139,6 +158,7 @@ export default function AddVisitScreen() {
     cafeCity,
     cafeCountry,
     selectedCafe,
+    googleCafeSelection,
     visitedAt,
     drinks,
     experienceRatings,

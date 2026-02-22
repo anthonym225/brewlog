@@ -1,5 +1,5 @@
 // T26: Google Places Cafe Search Bar
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -84,9 +84,20 @@ export function CafeSearchBar({ onSelect, onManualEntry }: CafeSearchBarProps) {
   const [dropdownVisible, setDropdownVisible] = useState(false);
 
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const apiKey = getApiKey();
   const hasApiKey = apiKey.length > 0;
+
+  // Clean up debounce timer and any in-flight request on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimer.current) {
+        clearTimeout(debounceTimer.current);
+      }
+      abortControllerRef.current?.abort();
+    };
+  }, []);
 
   const fetchPredictions = useCallback(
     async (input: string) => {
@@ -96,6 +107,11 @@ export function CafeSearchBar({ onSelect, onManualEntry }: CafeSearchBarProps) {
         return;
       }
 
+      // Abort any previous in-flight request
+      abortControllerRef.current?.abort();
+      abortControllerRef.current = new AbortController();
+      const { signal } = abortControllerRef.current;
+
       setLoading(true);
       setError(null);
 
@@ -104,10 +120,10 @@ export function CafeSearchBar({ onSelect, onManualEntry }: CafeSearchBarProps) {
           'https://maps.googleapis.com/maps/api/place/autocomplete/json'
         );
         url.searchParams.set('input', input);
-        url.searchParams.set('types', 'cafe|coffee_shop');
+        url.searchParams.set('types', 'cafe');
         url.searchParams.set('key', apiKey);
 
-        const response = await fetch(url.toString());
+        const response = await fetch(url.toString(), { signal });
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`);
         }
@@ -121,7 +137,10 @@ export function CafeSearchBar({ onSelect, onManualEntry }: CafeSearchBarProps) {
           setPredictions([]);
           setDropdownVisible(true);
         }
-      } catch {
+      } catch (err) {
+        if (err instanceof Error && err.name === 'AbortError') {
+          return; // Request was cancelled — don't update state
+        }
         setError('Places search unavailable');
         setPredictions([]);
         setDropdownVisible(true);
@@ -210,7 +229,7 @@ export function CafeSearchBar({ onSelect, onManualEntry }: CafeSearchBarProps) {
     }
   };
 
-  const showDropdown = dropdownVisible || (!hasApiKey && query.length > 0) || (!hasApiKey);
+  const showDropdown = dropdownVisible || (!hasApiKey && query.length > 0);
 
   return (
     <View style={styles.container}>
