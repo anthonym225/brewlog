@@ -247,7 +247,7 @@ export async function getVisitsByCafeId(
 export async function updateVisit(
   id: string,
   updates: Partial<
-    Omit<Visit, 'id' | 'cafe_id' | 'created_at' | 'updated_at'>
+    Omit<Visit, 'id' | 'created_at' | 'updated_at'>
   >
 ): Promise<void> {
   const db = getDatabase();
@@ -257,6 +257,7 @@ export async function updateVisit(
   const values: (string | number | null)[] = [];
 
   const allowedKeys: Array<keyof typeof updates> = [
+    'cafe_id',
     'visited_at',
     'notes',
     'overall_rating',

@@ -273,6 +273,7 @@ export default function EditVisitScreen() {
 
       // 3. Update visit row
       await updateVisit(id!, {
+        cafe_id: cafeId,
         visited_at: tempVisit.visited_at,
         notes: tempVisit.notes,
         overall_rating: tempVisit.overall_rating,
