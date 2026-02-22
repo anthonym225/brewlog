@@ -15,7 +15,7 @@ import {
   useFocusEffect,
 } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import MapView, { Marker } from 'react-native-maps';
+import CafeMap from '@/components/CafeMap';
 import { getCafeById } from '@/db/cafes';
 import { getVisitsByCafeId } from '@/db/visits';
 import { PhotoStrip } from '@/components/PhotoStrip';
@@ -150,24 +150,7 @@ export default function CafePageScreen() {
       {/* Map */}
       {showMap && (
         <View style={styles.mapContainer}>
-          <MapView
-            style={styles.map}
-            initialRegion={{
-              latitude: cafe.latitude,
-              longitude: cafe.longitude,
-              latitudeDelta: 0.01,
-              longitudeDelta: 0.01,
-            }}
-            scrollEnabled={false}
-            zoomEnabled={false}
-          >
-            <Marker
-              coordinate={{
-                latitude: cafe.latitude,
-                longitude: cafe.longitude,
-              }}
-            />
-          </MapView>
+          <CafeMap latitude={cafe.latitude} longitude={cafe.longitude} />
         </View>
       )}
 
@@ -312,9 +295,6 @@ const styles = StyleSheet.create({
     marginVertical: 8,
     borderRadius: 12,
     overflow: 'hidden',
-  },
-  map: {
-    flex: 1,
   },
   sectionTitle: {
     fontSize: 17,
