@@ -270,3 +270,12 @@ brewlog/
 - **npm installs:** Always use `--legacy-peer-deps` flag if adding new packages
 - **Stubs:** Stub files in `src/` contain `export {}` — replace entirely when implementing the task
 - **TypeScript:** Run `npx tsc --noEmit` to verify no type errors before marking a task done
+
+---
+
+## TODO
+
+- [ ] Sign up for Google Places API key (Google Cloud Console → Places API)
+- [ ] Store key in AWS Secrets Manager: secret `brewlog/google-places-api-key`, region `us-east-1`, format `{"GOOGLE_PLACES_API_KEY":"AIzaSy..."}`
+- [ ] Copy key to `.env` for local development (replacing placeholder)
+- [ ] Remove `GOOGLE_PLACES_API_KEY=mock` from `.env.local` once real key is in place
