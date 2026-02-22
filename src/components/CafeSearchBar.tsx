@@ -14,36 +14,17 @@ import type { Cafe } from '@/types';
 
 // ---- Google Places API types ----
 
-interface PlacePrediction {
-  place_id: string;
-  description: string;
-  structured_formatting: {
-    main_text: string;
-    secondary_text: string;
-  };
-}
+import {
+  type PlacePrediction,
+  type AddressComponent,
+  type PlaceDetailsResult,
+  searchMockCafes,
+  getMockPlaceDetails,
+} from '@/utils/mockPlaces';
 
 interface AutocompleteResponse {
   status: string;
   predictions: PlacePrediction[];
-}
-
-interface AddressComponent {
-  long_name: string;
-  short_name: string;
-  types: string[];
-}
-
-interface PlaceDetailsResult {
-  name: string;
-  formatted_address: string;
-  address_components?: AddressComponent[];
-  geometry?: {
-    location: {
-      lat: number;
-      lng: number;
-    };
-  };
 }
 
 interface PlaceDetailsResponse {
@@ -53,6 +34,10 @@ interface PlaceDetailsResponse {
 
 // ---- Helper ----
 
+// TODO: Sign up for Google Places API and add key to AWS Secrets Manager.
+// Secret name: brewlog/google-places-api-key  Region: us-east-1
+// Format: { "GOOGLE_PLACES_API_KEY": "AIzaSy..." }
+// Copy to .env for local dev, or use GOOGLE_PLACES_API_KEY=mock (.env.local) for mock mode.
 function getApiKey(): string {
   const key = Constants.expoConfig?.extra?.googleMapsApiKey as string | undefined;
   return key ?? '';
@@ -104,6 +89,13 @@ export function CafeSearchBar({ onSelect, onManualEntry }: CafeSearchBarProps) {
       if (!hasApiKey || input.trim().length < 2) {
         setPredictions([]);
         setDropdownVisible(input.length > 0);
+        return;
+      }
+
+      // Mock mode — synchronous, no network call
+      if (apiKey === 'mock') {
+        setPredictions(searchMockCafes(input));
+        setDropdownVisible(true);
         return;
       }
 
@@ -177,6 +169,27 @@ export function CafeSearchBar({ onSelect, onManualEntry }: CafeSearchBarProps) {
 
   const handleSelectPrediction = async (prediction: PlacePrediction) => {
     if (!hasApiKey) return;
+
+    // Mock mode — resolve details synchronously
+    if (apiKey === 'mock') {
+      const details = getMockPlaceDetails(prediction.place_id);
+      if (!details) return;
+      const components = details.address_components ?? [];
+      const city = extractAddressComponent(components, 'locality', 'administrative_area_level_2');
+      const country = extractAddressComponent(components, 'country');
+      setQuery(prediction.structured_formatting.main_text);
+      setDropdownVisible(false);
+      onSelect({
+        google_place_id: prediction.place_id,
+        name: details.name,
+        address: details.formatted_address,
+        city,
+        country,
+        latitude: details.geometry?.location.lat ?? 0,
+        longitude: details.geometry?.location.lng ?? 0,
+      });
+      return;
+    }
 
     setLoading(true);
     setDropdownVisible(false);
