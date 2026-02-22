@@ -44,6 +44,7 @@ export default function EditVisitScreen() {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [loadError, setLoadError] = useState(false);
 
   // Originals for reconciliation
   const [originalDrinkIds, setOriginalDrinkIds] = useState<Set<string>>(new Set());
@@ -130,6 +131,7 @@ export default function EditVisitScreen() {
         setNotes(data.notes ?? '');
       } catch (err) {
         console.error('Failed to load visit for editing:', err);
+        setLoadError(true);
       } finally {
         setLoading(false);
       }
@@ -194,6 +196,9 @@ export default function EditVisitScreen() {
   };
 
   const handleSave = async () => {
+    if (!id || typeof id !== 'string') {
+      return;
+    }
     if (cafeName.trim().length === 0) {
       Alert.alert('Missing Info', 'Please enter a cafe name.');
       return;
@@ -326,7 +331,10 @@ export default function EditVisitScreen() {
           }
         }
         // Save new picker URIs (not in originalPhotoMap)
-        let newSortOrder = originalPhotoMap.size;
+        const survivingOriginalCount = [...originalPhotoMap.keys()].filter(
+          (p) => currentPhotoPaths.has(p)
+        ).length;
+        let newSortOrder = survivingOriginalCount;
         for (const photoPath of photos) {
           if (!originalPhotoMap.has(photoPath)) {
             const savedPath = await savePhotoToStorage(photoPath);
@@ -369,6 +377,15 @@ export default function EditVisitScreen() {
     return (
       <View style={styles.centered}>
         <ActivityIndicator size="large" color="#8B5E3C" />
+      </View>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <View style={styles.centered}>
+        <Ionicons name="alert-circle-outline" size={48} color="#D4C4B0" />
+        <Text style={styles.errorText}>Failed to load visit</Text>
       </View>
     );
   }
