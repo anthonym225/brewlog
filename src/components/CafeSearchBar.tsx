@@ -163,7 +163,7 @@ export function CafeSearchBar({ onSelect, onManualEntry }: CafeSearchBarProps) {
     }
 
     debounceTimer.current = setTimeout(() => {
-      fetchPredictions(text).catch(() => {});
+      fetchPredictions(text).catch((err) => console.error('[CafeSearchBar] fetch error:', err));
     }, 300);
   };
 
@@ -290,7 +290,7 @@ export function CafeSearchBar({ onSelect, onManualEntry }: CafeSearchBarProps) {
             <TouchableOpacity
               key={prediction.place_id}
               style={styles.predictionRow}
-              onPress={() => { handleSelectPrediction(prediction).catch(() => {}); }}
+              onPress={() => { handleSelectPrediction(prediction).catch((err) => console.error('[CafeSearchBar] select error:', err)); }}
               activeOpacity={0.7}
             >
               <Ionicons name="cafe" size={16} color="#8B5E3C" />

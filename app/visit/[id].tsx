@@ -9,6 +9,7 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   useLocalSearchParams,
   router,
@@ -121,11 +122,12 @@ export default function VisitDetailScreen() {
   );
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-      showsVerticalScrollIndicator={false}
-    >
+    <SafeAreaView style={styles.container} edges={['bottom']}>
+      <ScrollView
+        style={styles.scrollFill}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
       {/* Photos */}
       {photoUris.length > 0 && (
         <View style={styles.section}>
@@ -216,7 +218,8 @@ export default function VisitDetailScreen() {
           <Text style={styles.notesText}>{visit.notes}</Text>
         </View>
       )}
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -224,6 +227,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFAF5',
+  },
+  scrollFill: {
+    flex: 1,
   },
   content: {
     paddingBottom: 40,

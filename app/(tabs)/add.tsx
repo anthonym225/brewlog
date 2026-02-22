@@ -585,7 +585,7 @@ export default function AddVisitScreen() {
             ) : (
               <CafeSearchBar
                 onSelect={(cafeData) => {
-                  handleCafeSelectFromGoogle(cafeData).catch(() => {});
+                  handleCafeSelectFromGoogle(cafeData).catch((err) => console.error('[AddVisit] cafe select error:', err));
                 }}
                 onManualEntry={() => setShowManualEntry(true)}
               />

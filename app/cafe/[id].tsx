@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   useLocalSearchParams,
   router,
@@ -130,11 +131,12 @@ export default function CafePageScreen() {
   const showMap = cafe.latitude !== 0 || cafe.longitude !== 0;
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-      showsVerticalScrollIndicator={false}
-    >
+    <SafeAreaView style={styles.safeArea} edges={['bottom']}>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
       {/* Header */}
       <View style={styles.section}>
         <Text style={styles.cafeName}>{cafe.name}</Text>
@@ -239,11 +241,16 @@ export default function CafePageScreen() {
           <PhotoStrip photos={allPhotos} />
         </View>
       )}
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#FFFAF5',
+  },
   container: {
     flex: 1,
     backgroundColor: '#FFFAF5',
