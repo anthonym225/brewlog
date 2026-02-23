@@ -57,6 +57,14 @@ export default function RootLayout() {
             headerBackTitle: 'Back',
           }}
         />
+        <Stack.Screen
+          name="visit/edit/[id]"
+          options={{
+            headerShown: true,
+            title: 'Edit Visit',
+            headerBackTitle: 'Back',
+          }}
+        />
       </Stack>
     </>
   );

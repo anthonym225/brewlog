@@ -41,3 +41,11 @@ export async function initDatabase(): Promise<void> {
     await db.execAsync(statement);
   }
 }
+
+/**
+ * Run a callback inside a SQLite transaction. Rolls back automatically if the callback throws.
+ */
+export async function runInTransaction(callback: () => Promise<void>): Promise<void> {
+  const db = getDatabase();
+  await db.withTransactionAsync(callback);
+}

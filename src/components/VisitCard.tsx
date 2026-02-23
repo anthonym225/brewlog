@@ -15,9 +15,9 @@ interface VisitCardProps {
 export function VisitCard({ visit, onPress }: VisitCardProps) {
   const heroPhoto = visit.photos.length > 0 ? visit.photos[0] : null;
 
-  // Format drinks summary: "Cappuccino 8/10, Latte 7/10"
+  // Format drinks summary: "Cappuccino 8.5/10, Latte 7/10"
   const drinksSummary = visit.drinks
-    .map((d) => `${d.name || d.type} ${d.rating}/10`)
+    .map((d) => `${d.name || d.type} ${formatRating(d.rating)}/10`)
     .join(', ');
 
   return (
@@ -45,7 +45,7 @@ export function VisitCard({ visit, onPress }: VisitCardProps) {
       )}
 
       <View style={styles.content}>
-        {/* Cafe name, city, and rating badge */}
+        {/* Cafe name, city, and rating badges */}
         <View style={styles.topRow}>
           <View style={styles.cafeInfo}>
             <Text style={styles.cafeName} numberOfLines={1}>
@@ -55,13 +55,24 @@ export function VisitCard({ visit, onPress }: VisitCardProps) {
               {visit.cafe.city}
             </Text>
           </View>
-          {visit.overall_rating != null && (
-            <View style={styles.ratingBadge}>
-              <Text style={styles.ratingText}>
-                {formatRating(visit.overall_rating)}
-              </Text>
-            </View>
-          )}
+          <View style={styles.ratingBadges}>
+            {visit.coffee_quality != null && (
+              <View style={[styles.ratingBadge, styles.coffeeBadge]}>
+                <Text style={styles.ratingBadgeLabel}>Coffee</Text>
+                <Text style={styles.ratingText}>
+                  {formatRating(visit.coffee_quality)}
+                </Text>
+              </View>
+            )}
+            {visit.overall_rating != null && (
+              <View style={styles.ratingBadge}>
+                <Text style={styles.ratingBadgeLabel}>Overall</Text>
+                <Text style={styles.ratingText}>
+                  {formatRating(visit.overall_rating)}
+                </Text>
+              </View>
+            )}
+          </View>
         </View>
 
         {/* Date */}
@@ -137,13 +148,27 @@ const styles = StyleSheet.create({
     color: '#8B7B6B',
     marginTop: 1,
   },
+  ratingBadges: {
+    flexDirection: 'row',
+    gap: 6,
+  },
   ratingBadge: {
     backgroundColor: '#8B5E3C',
     borderRadius: 8,
-    paddingHorizontal: 10,
+    paddingHorizontal: 8,
     paddingVertical: 4,
-    minWidth: 40,
+    minWidth: 44,
     alignItems: 'center',
+  },
+  coffeeBadge: {
+    backgroundColor: '#6B4226',
+  },
+  ratingBadgeLabel: {
+    fontSize: 9,
+    fontWeight: '600',
+    color: 'rgba(255,255,255,0.7)',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   ratingText: {
     fontSize: 14,

@@ -48,9 +48,9 @@
 | T23 | Map Screen | ✅ Done | 4 | Merged PR #6 |
 | T24 | Rankings Screen | ✅ Done | 4 | Merged PR #7 |
 | T25 | Profile / Stats Screen | ✅ Done | 4 | Merged PR #8 |
-| T26 | Google Places Integration | 🚧 In Progress | 5 | PR #9 open — feat/t26-google-places |
-| T27 | Photo Capture & Storage | 🚧 In Progress | 5 | PR #10 open — feat/t27-photo-storage |
-| T28 | Polish & Integration Testing | ⏳ Blocked | 6 | Needs T26 + T27 merged |
+| T26 | Google Places Integration | ✅ Done | 5 | Merged PR #9 — mock mode + dotenv loading |
+| T27 | Photo Capture & Storage | ✅ Done | 5 | Merged PR #10 — expo-file-system v19 |
+| T28 | Polish & Integration Testing | ✅ Done | 6 | Edit Visit screen + polish fixes |
 
 **Status legend:** ✅ Done · 🚧 In Progress · 🔲 Ready (unblocked) · ⏳ Blocked
 
@@ -270,3 +270,12 @@ brewlog/
 - **npm installs:** Always use `--legacy-peer-deps` flag if adding new packages
 - **Stubs:** Stub files in `src/` contain `export {}` — replace entirely when implementing the task
 - **TypeScript:** Run `npx tsc --noEmit` to verify no type errors before marking a task done
+
+---
+
+## TODO
+
+- [ ] Sign up for Google Places API key (Google Cloud Console → Places API)
+- [ ] Store key in AWS Secrets Manager: secret `brewlog/google-places-api-key`, region `us-east-1`, format `{"GOOGLE_PLACES_API_KEY":"AIzaSy..."}`
+- [ ] Copy key to `.env` for local development (replacing placeholder)
+- [ ] Remove `GOOGLE_PLACES_API_KEY=mock` from `.env.local` once real key is in place
