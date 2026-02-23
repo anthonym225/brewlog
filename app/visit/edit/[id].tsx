@@ -17,6 +17,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { runInTransaction } from '@/db/database';
 import { getVisitWithDetails, updateVisit } from '@/db/visits';
 import { insertCafe, getCafeByGooglePlaceId } from '@/db/cafes';
 import { insertDrink, updateDrink, deleteDrink } from '@/db/drinks';
@@ -276,84 +277,110 @@ export default function EditVisitScreen() {
       }
       tempVisit.overall_rating = computeOverallRating(tempVisit);
 
-      // 3. Update visit row
-      await updateVisit(id!, {
-        cafe_id: cafeId,
-        visited_at: tempVisit.visited_at,
-        notes: tempVisit.notes,
-        overall_rating: tempVisit.overall_rating,
-        coffee_quality: tempVisit.coffee_quality,
-        interior_design: tempVisit.interior_design,
-        vibe: tempVisit.vibe,
-        work_friendliness: tempVisit.work_friendliness,
-        location_surroundings: tempVisit.location_surroundings,
-        value: tempVisit.value,
-        wait_time: tempVisit.wait_time,
-        food_pastries: tempVisit.food_pastries,
-      });
-
-      // 4. Reconcile drinks
-      const currentDrinkIds = new Set(drinkObjects.map((d) => d.id));
-      for (const origId of originalDrinkIds) {
-        if (!currentDrinkIds.has(origId)) {
-          await deleteDrink(origId);
-        }
-      }
-      for (const drink of drinkObjects) {
-        if (originalDrinkIds.has(drink.id)) {
-          await updateDrink(drink.id, {
-            name: drink.name,
-            type: drink.type,
-            rating: drink.rating,
-            notes: drink.notes,
-          });
-        } else {
-          await insertDrink({
-            id: drink.id,
-            visit_id: id!,
-            name: drink.name,
-            type: drink.type,
-            rating: drink.rating,
-            notes: drink.notes,
-          });
-        }
-      }
-
-      // 5. Reconcile photos
+      // 3-5. Pre-compute photo file work before atomic DB transaction
       const currentPhotoPaths = new Set(photos);
+
+      // Save new picker URIs to storage first (file I/O outside transaction)
+      const survivingOriginalCount = [...originalPhotoMap.keys()].filter(
+        (p) => currentPhotoPaths.has(p)
+      ).length;
+      let nextSortOrder = survivingOriginalCount;
+      type NewPhotoEntry = { savedPath: string; sortOrder: number };
+      const newPhotoEntries: NewPhotoEntry[] = [];
       const newlySavedPaths: string[] = [];
+
       try {
-        // Delete removed originals from disk + DB
-        for (const [origPath, photoDbId] of originalPhotoMap.entries()) {
-          if (!currentPhotoPaths.has(origPath)) {
-            await deletePhoto(photoDbId);
-            deletePhotoFile(origPath);
-          }
-        }
-        // Save new picker URIs (not in originalPhotoMap)
-        const survivingOriginalCount = [...originalPhotoMap.keys()].filter(
-          (p) => currentPhotoPaths.has(p)
-        ).length;
-        let newSortOrder = survivingOriginalCount;
         for (const photoPath of photos) {
           if (!originalPhotoMap.has(photoPath)) {
             const savedPath = await savePhotoToStorage(photoPath);
             newlySavedPaths.push(savedPath);
-            await insertPhoto({
-              id: generateUUID(),
-              visit_id: id!,
-              file_path: savedPath,
-              sort_order: newSortOrder,
-            });
-            newSortOrder++;
+            newPhotoEntries.push({ savedPath, sortOrder: nextSortOrder });
+            nextSortOrder++;
           }
         }
       } catch (photoErr) {
-        // Clean up any files written so far to avoid orphans
         for (const fp of newlySavedPaths) {
           deletePhotoFile(fp);
         }
         throw photoErr;
+      }
+
+      // Collect paths to delete from disk after DB commit
+      const pathsToDeleteFromDisk: string[] = [];
+      for (const origPath of originalPhotoMap.keys()) {
+        if (!currentPhotoPaths.has(origPath)) {
+          pathsToDeleteFromDisk.push(origPath);
+        }
+      }
+
+      // Atomic DB transaction — steps 3, 4, 5 (DB only)
+      await runInTransaction(async () => {
+        // 3. Update visit row
+        await updateVisit(id!, {
+          cafe_id: cafeId,
+          visited_at: tempVisit.visited_at,
+          notes: tempVisit.notes,
+          overall_rating: tempVisit.overall_rating,
+          coffee_quality: tempVisit.coffee_quality,
+          interior_design: tempVisit.interior_design,
+          vibe: tempVisit.vibe,
+          work_friendliness: tempVisit.work_friendliness,
+          location_surroundings: tempVisit.location_surroundings,
+          value: tempVisit.value,
+          wait_time: tempVisit.wait_time,
+          food_pastries: tempVisit.food_pastries,
+        });
+
+        // 4. Reconcile drinks
+        const currentDrinkIds = new Set(drinkObjects.map((d) => d.id));
+        for (const origId of originalDrinkIds) {
+          if (!currentDrinkIds.has(origId)) {
+            await deleteDrink(origId);
+          }
+        }
+        for (const drink of drinkObjects) {
+          if (originalDrinkIds.has(drink.id)) {
+            await updateDrink(drink.id, {
+              name: drink.name,
+              type: drink.type,
+              rating: drink.rating,
+              notes: drink.notes,
+            });
+          } else {
+            await insertDrink({
+              id: drink.id,
+              visit_id: id!,
+              name: drink.name,
+              type: drink.type,
+              rating: drink.rating,
+              notes: drink.notes,
+            });
+          }
+        }
+
+        // 5. Photo DB ops (file I/O already done above)
+        for (const [origPath, photoDbId] of originalPhotoMap.entries()) {
+          if (!currentPhotoPaths.has(origPath)) {
+            await deletePhoto(photoDbId);
+          }
+        }
+        for (const { savedPath, sortOrder } of newPhotoEntries) {
+          await insertPhoto({
+            id: generateUUID(),
+            visit_id: id!,
+            file_path: savedPath,
+            sort_order: sortOrder,
+          });
+        }
+      });
+
+      // After DB commit: delete removed photo files from disk
+      for (const origPath of pathsToDeleteFromDisk) {
+        try {
+          deletePhotoFile(origPath);
+        } catch (fileErr) {
+          console.error('[EditVisit] failed to delete photo file:', origPath, fileErr);
+        }
       }
 
       router.back();
