@@ -188,7 +188,7 @@ export default function CafePageScreen() {
               </View>
               <View style={styles.drinkRatingBadge}>
                 <Text style={styles.drinkRatingText}>
-                  {drink.rating}/10
+                  {formatRating(drink.rating)}/10
                 </Text>
               </View>
             </View>

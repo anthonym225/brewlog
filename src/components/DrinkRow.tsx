@@ -14,7 +14,6 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { DRINK_TYPES } from '@/constants/drinkTypes';
 import type { DrinkFormData } from '@/types';
-import { RatingSlider } from '@/components/RatingSlider';
 
 interface DrinkRowProps {
   drink: DrinkFormData;
@@ -24,10 +23,41 @@ interface DrinkRowProps {
 
 export function DrinkRow({ drink, onChange, onDelete }: DrinkRowProps) {
   const [showTypePicker, setShowTypePicker] = useState(false);
+  const [ratingText, setRatingText] = useState(
+    drink.rating > 0 ? String(drink.rating) : ''
+  );
 
   const handleTypeSelect = (type: string) => {
     onChange({ ...drink, type });
     setShowTypePicker(false);
+  };
+
+  const handleRatingTextChange = (text: string) => {
+    // Allow only digits and one decimal point
+    const sanitized = text.replace(/[^0-9.]/g, '');
+    const dotIndex = sanitized.indexOf('.');
+    if (dotIndex !== -1) {
+      // Limit to 1 decimal place
+      setRatingText(sanitized.slice(0, dotIndex + 2));
+    } else {
+      setRatingText(sanitized);
+    }
+  };
+
+  const handleRatingBlur = () => {
+    if (ratingText === '') {
+      onChange({ ...drink, rating: 0 });
+      return;
+    }
+    const parsed = parseFloat(ratingText);
+    if (isNaN(parsed)) {
+      setRatingText(drink.rating > 0 ? String(drink.rating) : '');
+      return;
+    }
+    const clamped = Math.min(10, Math.max(0.1, parsed));
+    const rounded = Math.round(clamped * 10) / 10;
+    onChange({ ...drink, rating: rounded });
+    setRatingText(String(rounded));
   };
 
   return (
@@ -70,11 +100,23 @@ export function DrinkRow({ drink, onChange, onDelete }: DrinkRowProps) {
       />
 
       {/* Rating */}
-      <RatingSlider
-        label="Rating"
-        value={drink.rating || null}
-        onChange={(val) => onChange({ ...drink, rating: val ?? 0 })}
-      />
+      <View style={styles.ratingRow}>
+        <Text style={styles.ratingLabel}>Rating</Text>
+        <View style={styles.ratingInputWrapper}>
+          <TextInput
+            style={styles.ratingInput}
+            value={ratingText}
+            onChangeText={handleRatingTextChange}
+            onBlur={handleRatingBlur}
+            keyboardType="decimal-pad"
+            placeholder="—"
+            placeholderTextColor="#B0A090"
+            maxLength={4}
+            returnKeyType="done"
+          />
+          <Text style={styles.ratingMax}>/10</Text>
+        </View>
+      </View>
 
       {/* Type Picker Modal */}
       <Modal
@@ -170,6 +212,37 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#3C2A1A',
     marginBottom: 12,
+  },
+  ratingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  ratingLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#3C2A1A',
+  },
+  ratingInputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F5EDE3',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  ratingInput: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#6B4226',
+    minWidth: 36,
+    textAlign: 'right',
+  },
+  ratingMax: {
+    fontSize: 14,
+    color: '#8B7B6B',
+    marginLeft: 2,
   },
   modalContainer: {
     flex: 1,
